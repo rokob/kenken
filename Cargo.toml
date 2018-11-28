@@ -1,0 +1,8 @@
+[package]
+name = "kenken"
+version = "0.1.0"
+authors = ["Andrew Weiss <wvvwwvw@gmail.com>"]
+
+[dependencies]
+log = "0.4"
+pretty_env_logger = "0.2.5"
