@@ -89,7 +89,7 @@ impl Constraints {
         });
     }
 
-    pub fn apply_equality(&mut self, result: &mut Board) {
+    pub fn apply_equality(&self, result: &mut Board) {
         for constraint in self.0.iter() {
             match constraint.operation {
                 Op::Equal => {

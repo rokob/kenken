@@ -1,7 +1,7 @@
 use board::{Board, Item};
 use constraint::{ConstraintResult, Constraints};
 
-pub fn solve(size: usize, mut constraints: Constraints) -> Board {
+pub fn solve(size: usize, constraints: Constraints) -> Board {
     let mut result = Board::new(size);
     constraints.apply_equality(&mut result);
 
