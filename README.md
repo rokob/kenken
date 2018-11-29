@@ -47,8 +47,8 @@ W = 1
 
 The first line, `N`, is the size, either 5 or 7. The code can handle any integer up to (and including) 7,
 but the magazine only has the two sizes. Followed by `N` lines each with `N` characters which
-represents the puzzle grid. A unique char is required to represent each grouping, any ascii will
-work just fine, I use capital letters. Then is follows the constraints, this will be one for each
+represents the puzzle grid. A unique `char` is required to represent each grouping, any ascii will
+work just fine, I use capital letters. Then follows the constraints, this will be one for each
 character used in the grid. There are 5 different constraint types, each with the format:
 
 ```
