@@ -61,12 +61,35 @@ where it just tells you what the number is.
 
 ## Running
 
-This is built using Rust, so
+This is built using Rust, so for speed you should probably use the release build:
 
 ```
-$ cargo build --release`
+$ cargo build --release
 $ ./target/release/kenken [file]
 ```
 
 where `[file]` is the path to the file containing the input data. If this is missing it is assumed
 to be `puzzle.dat` in the current working directory.
+
+If you want to see some extra output, you can use the `RUST_LOG=kenken=xxx` environment variable to
+turn on logging, where `xxx` is one of `trace`, `debug`, `info`, `warn`. Each higher level gives
+less information. If you want to see how many steps it took just turn on the `warn` level. The lower
+levels print out intermediate grids.
+
+For example, with the above example input in `puzzle.dat` I get this on my machine:
+
+```
+[weiss:kenken (master)]$ RUST_LOG=kenken=warn time ./target/release/kenken puzzle.dat
+ WARN  kenken > loading puzzle.dat
+ WARN  kenken::solver > Done @ 45596
+2 5 3 4 7 6 1
+1 4 5 3 6 7 2
+3 1 6 2 4 5 7
+7 2 4 5 1 3 6
+5 7 2 6 3 1 4
+6 3 7 1 2 4 5
+4 6 1 7 5 2 3
+        0.01 real         0.00 user         0.00 sys
+```
+
+So it took `45596` steps to get a solution in a small amount of time.
