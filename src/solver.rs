@@ -2,9 +2,9 @@ use board::{Board, Item};
 use constraint::{ConstraintResult, Constraints};
 
 pub fn solve(size: usize, mut constraints: Constraints) -> Board {
-    use self::ConstraintResult::*;
     let mut result = Board::new(size);
     constraints.apply_equality(&mut result);
+
     let mut pos = (0, 0);
     let mut steps = 0;
     loop {
@@ -14,10 +14,9 @@ pub fn solve(size: usize, mut constraints: Constraints) -> Board {
             trace!("\n{}", result);
         }
         match constraints.check(&result) {
-            Solved => break,
-            Violated => backtrack(size, &mut result, &mut pos),
-            Okay => next(size, &mut result, &mut pos),
-            BadConstraint => break,
+            ConstraintResult::Solved | ConstraintResult::BadConstraint => break,
+            ConstraintResult::Violated => backtrack(size, &mut result, &mut pos),
+            ConstraintResult::Okay => next(size, &mut result, &mut pos),
         }
         if log_enabled!(log::Level::Debug) {
             if steps % 50 == 0 {
@@ -44,15 +43,13 @@ fn backtrack(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
                 cur.0, cur.1
             ),
             Item::Solved(_) => {
-                let prev_pos = prev_position(size, cur);
-                *cur = prev_pos;
+                prev_position(size, cur);
                 continue;
             }
             Item::Guess(x) => {
                 if x as usize == size {
                     board.0[cur.0][cur.1] = Item::Hole;
-                    let prev_pos = prev_position(size, cur);
-                    *cur = prev_pos;
+                    prev_position(size, cur);
                     continue;
                 } else {
                     board.0[cur.0][cur.1] = Item::Guess(x + 1);
@@ -69,30 +66,30 @@ fn next(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
         return;
     }
     loop {
-        let next_pos = next_position(size, cur);
-        if board.0[next_pos.0][next_pos.1].is_hole() {
-            board.0[next_pos.0][next_pos.1] = Item::Guess(1);
-            *cur = next_pos;
+        next_position(size, cur);
+        if board.0[cur.0][cur.1].is_hole() {
+            board.0[cur.0][cur.1] = Item::Guess(1);
             break;
-        } else if board.0[next_pos.0][next_pos.1].is_solved() {
-            *cur = next_pos;
+        } else if board.0[cur.0][cur.1].is_solved() {
             continue;
         } else {
-            panic!("This shouldn't happen @ ({}, {})", next_pos.0, next_pos.1);
+            panic!("This shouldn't happen @ ({}, {})", cur.0, cur.1);
         }
     }
 }
 
-fn prev_position(size: usize, cur: &(usize, usize)) -> (usize, usize) {
-    if cur.0 == 0 {
+#[inline]
+fn prev_position(size: usize, cur: &mut (usize, usize)) {
+    *cur = if cur.0 == 0 {
         (size - 1, cur.1 - 1)
     } else {
         (cur.0 - 1, cur.1)
     }
 }
 
-fn next_position(size: usize, cur: &(usize, usize)) -> (usize, usize) {
-    if cur.0 + 1 == size {
+#[inline]
+fn next_position(size: usize, cur: &mut (usize, usize)) {
+    *cur = if cur.0 + 1 == size {
         (0, cur.1 + 1)
     } else {
         (cur.0 + 1, cur.1)

@@ -43,21 +43,88 @@ pub struct Constraints(Vec<Constraint>);
 
 impl Constraints {
     pub fn new(size: usize) -> Self {
-        let mut inner = Vec::new();
-        add_basic_constraints(size, &mut inner);
-        Constraints(inner)
+        let mut me = Constraints(Vec::with_capacity(2 * size * size));
+        me.add_basic_constraints(size);
+        me
+    }
+
+    fn add_basic_constraints(&mut self, size: usize) {
+        for r in 0..size {
+            let mut coords = Vec::with_capacity(size);
+            for c in 0..size {
+                coords.push((r, c));
+            }
+            self.0.push(Constraint {
+                coords,
+                operation: Op::Unique,
+                value: None,
+            });
+        }
+        for c in 0..size {
+            let mut coords = Vec::with_capacity(size);
+            for r in 0..size {
+                coords.push((r, c));
+            }
+            self.0.push(Constraint {
+                coords,
+                operation: Op::Unique,
+                value: None,
+            });
+        }
     }
 
     pub fn add(&mut self, line: String, puzzle: &[[char; 7]; 7]) {
-        process_constraint(line, puzzle, &mut self.0);
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() != 3 {
+            panic!("Bad constraint format: {}", line);
+        }
+        let letter = parts[0].chars().next().unwrap();
+        let coords = coords_for_char(puzzle, letter);
+        let operation = Op::from(parts[1]);
+        let value = parts[2].parse::<u32>().ok();
+        self.0.push(Constraint {
+            coords,
+            operation,
+            value,
+        });
     }
 
     pub fn apply_equality(&mut self, result: &mut Board) {
-        apply_equality_constraints(result, &mut self.0);
+        for constraint in self.0.iter() {
+            match constraint.operation {
+                Op::Equal => {
+                    if constraint.coords.len() != 1 {
+                        panic!("Bad equality constraint: too many coordinates!");
+                    }
+                    let (r, c) = constraint.coords[0];
+                    if let Some(val) = constraint.value {
+                        result.0[r][c] = Item::Solved(val);
+                    } else {
+                        panic!("Bad equality constraint: missing value!");
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     pub fn check(&self, result: &Board) -> ConstraintResult {
-        check(result, &self.0)
+        use self::ConstraintResult::*;
+        let mut okay = false;
+        for constraint in self.0.iter() {
+            match constraint.satisfied(result) {
+                r @ Violated | r @ BadConstraint => return r,
+                Solved => {}
+                Okay => {
+                    okay = true;
+                }
+            }
+        }
+        if okay {
+            Okay
+        } else {
+            Solved
+        }
     }
 }
 
@@ -181,87 +248,4 @@ fn coords_for_char(puzzle: &[[char; 7]; 7], val: char) -> Vec<(usize, usize)> {
         }
     }
     result
-}
-
-pub fn process_constraint(
-    line: String,
-    puzzle: &[[char; 7]; 7],
-    constraints: &mut Vec<Constraint>,
-) {
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    if parts.len() != 3 {
-        panic!("Bad constraint format: {}", line);
-    }
-    let letter = parts[0].chars().next().unwrap();
-    let coords = coords_for_char(puzzle, letter);
-    let operation = Op::from(parts[1]);
-    let value = parts[2].parse::<u32>().ok();
-    constraints.push(Constraint {
-        coords,
-        operation,
-        value,
-    });
-}
-
-pub fn add_basic_constraints(size: usize, constraints: &mut Vec<Constraint>) {
-    for r in 0..size {
-        let mut coords = Vec::with_capacity(size);
-        for c in 0..size {
-            coords.push((r, c));
-        }
-        constraints.push(Constraint {
-            coords,
-            operation: Op::Unique,
-            value: None,
-        });
-    }
-    for c in 0..size {
-        let mut coords = Vec::with_capacity(size);
-        for r in 0..size {
-            coords.push((r, c));
-        }
-        constraints.push(Constraint {
-            coords,
-            operation: Op::Unique,
-            value: None,
-        });
-    }
-}
-
-pub fn check(answer: &Board, constraints: &Vec<Constraint>) -> ConstraintResult {
-    use self::ConstraintResult::*;
-    let mut okay = false;
-    for constraint in constraints {
-        match constraint.satisfied(answer) {
-            r @ Violated | r @ BadConstraint => return r,
-            Solved => {}
-            Okay => {
-                okay = true;
-            }
-        }
-    }
-    if okay {
-        Okay
-    } else {
-        Solved
-    }
-}
-
-pub fn apply_equality_constraints(answer: &mut Board, constraints: &Vec<Constraint>) {
-    for constraint in constraints {
-        match constraint.operation {
-            Op::Equal => {
-                if constraint.coords.len() != 1 {
-                    panic!("Bad equality constraint: too many coordinates!");
-                }
-                let (r, c) = constraint.coords[0];
-                if let Some(val) = constraint.value {
-                    answer.0[r][c] = Item::Solved(val);
-                } else {
-                    panic!("Bad equality constraint: missing value!");
-                }
-            }
-            _ => {}
-        }
-    }
 }
