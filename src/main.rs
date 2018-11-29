@@ -8,12 +8,16 @@ use std::io::BufReader;
 
 mod board;
 mod constraint;
+mod puzzle;
 mod solver;
 
 use constraint::Constraints;
+use puzzle::Puzzle;
 use solver::solve;
 
 use std::env;
+
+const MAX_SIZE: usize = 9;
 
 fn main() {
     pretty_env_logger::init();
@@ -32,18 +36,18 @@ fn main() {
     let size = lines.next().unwrap().unwrap().parse::<usize>().unwrap();
     let mut constraints = Constraints::new(size);
 
-    let mut puzzle = [[' '; 7]; 7];
+    let mut puzzle = Puzzle::new();
     for (r, line) in lines.enumerate() {
         let line = line.unwrap();
         if r < size {
             for (c, val) in line.chars().enumerate() {
-                puzzle[r][c] = val;
+                puzzle.set(r, c, val);
             }
         } else {
-            constraints.add(line, &puzzle);
+            constraints.add(&line, &puzzle);
         }
     }
 
-    let result = solve(size, constraints);
+    let result = solve(size, &constraints);
     println!("{}", result);
 }

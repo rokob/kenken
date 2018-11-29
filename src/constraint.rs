@@ -1,4 +1,5 @@
 use board::{Board, Item};
+use puzzle::Puzzle;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Op {
@@ -73,13 +74,13 @@ impl Constraints {
         }
     }
 
-    pub fn add(&mut self, line: String, puzzle: &[[char; 7]; 7]) {
+    pub fn add(&mut self, line: &str, puzzle: &Puzzle) {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() != 3 {
             panic!("Bad constraint format: {}", line);
         }
         let letter = parts[0].chars().next().unwrap();
-        let coords = coords_for_char(puzzle, letter);
+        let coords = puzzle.coords_for_char(letter);
         let operation = Op::from(parts[1]);
         let value = parts[2].parse::<u32>().ok();
         self.0.push(Constraint {
@@ -91,19 +92,16 @@ impl Constraints {
 
     pub fn apply_equality(&self, result: &mut Board) {
         for constraint in self.0.iter() {
-            match constraint.operation {
-                Op::Equal => {
-                    if constraint.coords.len() != 1 {
-                        panic!("Bad equality constraint: too many coordinates!");
-                    }
-                    let (r, c) = constraint.coords[0];
-                    if let Some(val) = constraint.value {
-                        result.0[r][c] = Item::Solved(val);
-                    } else {
-                        panic!("Bad equality constraint: missing value!");
-                    }
+            if let Op::Equal = constraint.operation {
+                if constraint.coords.len() != 1 {
+                    panic!("Bad equality constraint: too many coordinates!");
                 }
-                _ => {}
+                let (r, c) = constraint.coords[0];
+                if let Some(val) = constraint.value {
+                    result.0[r][c] = Item::Solved(val);
+                } else {
+                    panic!("Bad equality constraint: missing value!");
+                }
             }
         }
     }
@@ -236,16 +234,4 @@ impl Constraint {
             }
         }
     }
-}
-
-fn coords_for_char(puzzle: &[[char; 7]; 7], val: char) -> Vec<(usize, usize)> {
-    let mut result = Vec::with_capacity(5);
-    for r in 0..7 {
-        for c in 0..7 {
-            if puzzle[r][c] == val {
-                result.push((r, c));
-            }
-        }
-    }
-    result
 }

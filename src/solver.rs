@@ -1,7 +1,7 @@
 use board::{Board, Item};
 use constraint::{ConstraintResult, Constraints};
 
-pub fn solve(size: usize, constraints: Constraints) -> Board {
+pub fn solve(size: usize, constraints: &Constraints) -> Board {
     let mut result = Board::new(size);
     constraints.apply_equality(&mut result);
 
@@ -23,11 +23,9 @@ pub fn solve(size: usize, constraints: Constraints) -> Board {
                 debug!("Step {}", steps);
                 debug!("\n{}", result);
             }
-        } else if log_enabled!(log::Level::Info) {
-            if steps % 100 == 0 {
-                info!("Step {}", steps);
-                info!("\n{}", result);
-            }
+        } else if log_enabled!(log::Level::Info) && steps % 100 == 0 {
+            info!("Step {}", steps);
+            info!("\n{}", result);
         }
     }
     warn!("Done @ {}", steps);
