@@ -13,11 +13,18 @@ mod solver;
 use constraint::Constraints;
 use solver::solve;
 
+use std::env;
+
 fn main() {
     pretty_env_logger::init();
 
-    trace!("loading puzzle.dat");
-    let filename = "puzzle.dat";
+    let args = env::args().collect::<Vec<_>>();
+    let filename = if args.len() == 1 {
+        "puzzle.dat".to_owned()
+    } else {
+        args[1].clone()
+    };
+    warn!("loading {}", filename);
     let f = File::open(filename).unwrap();
     let f = BufReader::new(f);
     let mut lines = f.lines();
@@ -29,19 +36,14 @@ fn main() {
     for (r, line) in lines.enumerate() {
         let line = line.unwrap();
         if r < size {
-            process_puzzle(line, r, &mut puzzle);
+            for (c, val) in line.chars().enumerate() {
+                puzzle[r][c] = val;
+            }
         } else {
             constraints.add(line, &puzzle);
         }
     }
 
     let result = solve(size, constraints);
-    warn!("Solved:");
     println!("{}", result);
-}
-
-fn process_puzzle(line: String, r: usize, puzzle: &mut [[char; 7]; 7]) {
-    for (c, val) in line.chars().enumerate() {
-        puzzle[r][c] = val;
-    }
 }
