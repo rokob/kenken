@@ -18,17 +18,12 @@ pub fn solve(size: usize, constraints: &Constraints) -> Board {
             ConstraintResult::Violated => backtrack(size, &mut result, &mut pos),
             ConstraintResult::Okay => next(size, &mut result, &mut pos),
         }
-        if log_enabled!(log::Level::Debug) {
-            if steps % 50 == 0 {
-                debug!("Step {}", steps);
-                debug!("\n{}", result);
-            }
-        } else if log_enabled!(log::Level::Info) && steps % 100 == 0 {
-            info!("Step {}", steps);
-            info!("\n{}", result);
+        if log_enabled!(log::Level::Debug) && steps % 50 == 0 {
+            debug!("Step {}", steps);
+            debug!("\n{}", result);
         }
     }
-    warn!("Done @ {}", steps);
+    info!("Done @ {}", steps);
     result
 }
 

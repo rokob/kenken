@@ -1,12 +1,9 @@
 use MAX_SIZE;
 
+#[derive(Default)]
 pub struct Puzzle([[char; MAX_SIZE]; MAX_SIZE]);
 
 impl Puzzle {
-    pub fn new() -> Self {
-        Puzzle([[' '; MAX_SIZE]; MAX_SIZE])
-    }
-
     pub fn set(&mut self, r: usize, c: usize, val: char) {
         self.0[r][c] = val;
     }
