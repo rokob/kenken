@@ -1,4 +1,4 @@
-use board::{Board, Item};
+use board::Board;
 use puzzle::Puzzle;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -98,7 +98,7 @@ impl Constraints {
                 }
                 let (r, c) = constraint.coords[0];
                 if let Some(val) = constraint.value {
-                    result.0[r][c] = Item::Solved(val);
+                    result.solve(r, c, val);
                 } else {
                     panic!("Bad equality constraint: missing value!");
                 }
@@ -132,11 +132,10 @@ impl Constraint {
             Op::Add => {
                 let mut sum = 0;
                 for (r, c) in self.coords.iter() {
-                    let i = ans.0[*r][*c];
-                    if i.is_hole() {
+                    if ans.is_hole(*r, *c) {
                         return ConstraintResult::Okay;
                     }
-                    sum += i.value();
+                    sum += ans.value(*r, *c);
                 }
                 if let Some(val) = self.value {
                     if val == sum {
@@ -148,11 +147,10 @@ impl Constraint {
             Op::Mul => {
                 let mut prod = 1;
                 for (r, c) in self.coords.iter() {
-                    let i = ans.0[*r][*c];
-                    if i.is_hole() {
+                    if ans.is_hole(*r, *c) {
                         return ConstraintResult::Okay;
                     }
-                    prod *= i.value();
+                    prod *= ans.value(*r, *c);
                 }
                 if let Some(val) = self.value {
                     if val == prod {
@@ -165,15 +163,13 @@ impl Constraint {
                 if self.coords.len() != 2 {
                     return ConstraintResult::BadConstraint;
                 }
-                let (r1, c1) = self.coords[0];
-                let (r2, c2) = self.coords[1];
-                let i1 = ans.0[r1][c1];
-                let i2 = ans.0[r2][c2];
-                if i1.is_hole() || i2.is_hole() {
+                let a = self.coords[0];
+                let b = self.coords[1];
+                if ans.either_hole(a, b) {
                     return ConstraintResult::Okay;
                 }
                 if let Some(val) = self.value {
-                    if i1.value() / i2.value() == val || i2.value() / i1.value() == val {
+                    if ans.div_equal(a, b, val) {
                         return ConstraintResult::Solved;
                     }
                 }
@@ -183,15 +179,13 @@ impl Constraint {
                 if self.coords.len() != 2 {
                     return ConstraintResult::BadConstraint;
                 }
-                let (r1, c1) = self.coords[0];
-                let (r2, c2) = self.coords[1];
-                let i1 = ans.0[r1][c1];
-                let i2 = ans.0[r2][c2];
-                if i1.is_hole() || i2.is_hole() {
+                let a = self.coords[0];
+                let b = self.coords[1];
+                if ans.either_hole(a, b) {
                     return ConstraintResult::Okay;
                 }
                 if let Some(val) = self.value {
-                    if i1.value() == val + i2.value() || i2.value() == val + i1.value() {
+                    if ans.sub_equal(a, b, val) {
                         return ConstraintResult::Solved;
                     }
                 }
@@ -201,12 +195,12 @@ impl Constraint {
                 if self.coords.len() != 1 {
                     return ConstraintResult::BadConstraint;
                 }
-                let i = ans.0[self.coords[0].0][self.coords[0].1];
-                if i.is_hole() {
+                let (r, c) = (self.coords[0].0, self.coords[0].1);
+                if ans.is_hole(r, c) {
                     return ConstraintResult::Okay;
                 }
                 if let Some(val) = self.value {
-                    if val == i.value() {
+                    if val == ans.value(r, c) {
                         return ConstraintResult::Solved;
                     }
                 }
@@ -216,15 +210,14 @@ impl Constraint {
                 let mut seen = [false; 7];
                 let mut seen_hole = false;
                 for (r, c) in self.coords.iter() {
-                    let item = ans.0[*r][*c];
-                    if item.is_hole() {
+                    if ans.is_hole(*r, *c) {
                         seen_hole = true;
                         continue;
                     }
-                    if seen[(item.value() - 1) as usize] {
+                    if seen[(ans.value(*r, *c) - 1) as usize] {
                         return ConstraintResult::Violated;
                     }
-                    seen[(item.value() - 1) as usize] = true;
+                    seen[(ans.value(*r, *c) - 1) as usize] = true;
                 }
                 if seen_hole {
                     ConstraintResult::Okay

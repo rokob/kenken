@@ -46,6 +46,34 @@ impl Board {
     pub fn new(size: usize) -> Self {
         Board([[Item::Hole; MAX_SIZE]; MAX_SIZE], size)
     }
+
+    pub fn solve(&mut self, r: usize, c: usize, val: u32) {
+        self.0[r][c] = Item::Solved(val);
+    }
+
+    pub fn is_hole(&self, r: usize, c: usize) -> bool {
+        self.0[r][c].is_hole()
+    }
+
+    pub fn value(&self, r: usize, c: usize) -> u32 {
+        self.0[r][c].value()
+    }
+
+    pub fn either_hole(&self, a: (usize, usize), b: (usize, usize)) -> bool {
+        self.0[a.0][a.1].is_hole() || self.0[b.0][b.1].is_hole()
+    }
+
+    pub fn div_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> bool {
+        let a_val = self.0[a.0][a.1].value();
+        let b_val = self.0[b.0][b.1].value();
+        a_val == val * b_val || b_val == val * a_val
+    }
+
+    pub fn sub_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> bool {
+        let a_val = self.0[a.0][a.1].value();
+        let b_val = self.0[b.0][b.1].value();
+        a_val == val + b_val || b_val == val + a_val
+    }
 }
 
 impl fmt::Display for Board {
