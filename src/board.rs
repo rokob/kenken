@@ -157,7 +157,9 @@ impl Board {
     }
 
     pub fn backtrack(&mut self, pos: &(usize, usize)) -> Backtrack {
-        debug_assert!(!mget!((self.board), pos.0, pos.1).is_hole());
+        if mget!((self.board), pos.0, pos.1).is_hole() {
+            return Backtrack::Reset;
+        }
         if mget!((self.board), pos.0, pos.1).is_solved() {
             return Backtrack::Solved;
         }
@@ -166,16 +168,40 @@ impl Board {
                 mget!((self.board), pos.0, pos.1) = Item::Hole;
                 Backtrack::Reset
             } else {
-                mget!((self.board), pos.0, pos.1) = Item::Guess(x + 1);
-                Backtrack::Next
+                let poss = self.get_possible(pos);
+                if let Some(i) = poss[1..=self.size].iter().skip(x as usize).position(|&b| b) {
+                    mget!((self.board), pos.0, pos.1) = Item::Guess(x + 1 + i as u32);
+                    return Backtrack::Next;
+                }
+                mget!((self.board), pos.0, pos.1) = Item::Hole;
+                Backtrack::Reset
             }
         } else {
             panic!("Bad backtracking cell @ ({}, {})", pos.0, pos.1);
         }
     }
 
-    pub fn initial(&mut self, pos: &(usize, usize)) {
-        mget!((self.board), pos.0, pos.1) = Item::Guess(1);
+    pub fn initial(&mut self, pos: &(usize, usize)) -> Backtrack {
+        let poss = self.get_possible(pos);
+        if let Some(i) = poss[1..=self.size].iter().position(|&b| b) {
+            mget!((self.board), pos.0, pos.1) = Item::Guess(1 + i as u32);
+            Backtrack::Next
+        } else {
+            Backtrack::Reset
+        }
+    }
+
+    fn get_possible(&self, pos: &(usize, usize)) -> [bool; MAX_SIZE + 1] {
+        let mut available = [true; MAX_SIZE + 1];
+        for x in 0..self.size {
+            if x != pos.0 {
+                available[mget!((self.board), x, pos.1).value() as usize] = false;
+            }
+            if x != pos.1 {
+                available[mget!((self.board), pos.0, x).value() as usize] = false;
+            }
+        }
+        available
     }
 }
 

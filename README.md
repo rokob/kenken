@@ -11,6 +11,13 @@ My second pass was to add some heuristics to cutoff the search sooner once I cou
 constraint was for sure going to be violated. This brought 7x7 puzzles down to about 1.5ms, and then
 I took another 0.5ms off through some simple optimizations. 5x5 puzzles are solved in around 20us.
 
+Final pass on this as I should stop playing with this tiny project, but I really wanted to get the
+7x7 time below 1ms. One final optimization where I check the rows and columns for a hole before
+putting in a guess to only use unused values. Before I was just starting at 1 and incrementing by 1
+and letting the constraint violation handle the issue. This small change cuts the 7x7 time roughly
+in half so that the full solve time including parsing the input file is about 600us (see numbers at
+the bottom). Any more optimization at this point would probably not be worthwhile.
+
 ## Input
 
 Example input:
@@ -98,7 +105,22 @@ For example, with the above example input in `puzzle.dat` I get this on my machi
         0.00 real         0.00 user         0.00 sys
 ```
 
-So it took `7229` steps to get a solution in a small amount of time.
+```
+[weiss:kenken (master)]$ RUST_LOG=kenken=info time ./target/release/kenken puzzle.dat
+ INFO  kenken > loading puzzle.dat
+ INFO  kenken::solver > Done @ 1729
+2 5 3 4 7 6 1
+1 4 5 3 6 7 2
+3 1 6 2 4 5 7
+7 2 4 5 1 3 6
+5 7 2 6 3 1 4
+6 3 7 1 2 4 5
+4 6 1 7 5 2 3
+        0.00 real         0.00 user         0.00 sys
+```
+
+So it took `1729` steps to get a solution in a small amount of time. The previous
+verison took `7229` steps, and the one before that took `45596`.
 
 
 ## Benchmarks
@@ -115,13 +137,13 @@ time.
 The most recent runs on my machine for the four benchmarks are:
 
 ```
-solve 5                 time:   [19.216 us 19.319 us 19.424 us]
+solve 5                 time:   [14.634 us 14.757 us 14.882 us]
 
-solve 6                 time:   [36.651 us 36.824 us 37.000 us]
+solve 6                 time:   [24.589 us 24.802 us 25.018 us]
 
-solve 7                 time:   [1.0095 ms 1.0173 ms 1.0266 ms]
+solve 7                 time:   [576.15 us 582.55 us 589.45 us]
 
-solve 7 full            time:   [1.0213 ms 1.0263 ms 1.0317 ms]
+solve 7 full            time:   [601.89 us 609.89 us 617.95 us]
 ```
 
 They should be self-explanatory, the time is a 95% confidence interval about the mean.

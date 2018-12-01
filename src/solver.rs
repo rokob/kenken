@@ -44,13 +44,17 @@ fn backtrack(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
 
 fn next(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
     if board.is_hole(cur.0, cur.1) {
-        board.initial(cur);
+        if let Backtrack::Reset = board.initial(cur) {
+            backtrack(size, board, cur);
+        }
         return;
     }
     loop {
         next_position(size, cur);
         if board.is_hole(cur.0, cur.1) {
-            board.initial(cur);
+            if let Backtrack::Reset = board.initial(cur) {
+                backtrack(size, board, cur);
+            }
             break;
         } else if board.is_solved(cur.0, cur.1) {
             continue;
