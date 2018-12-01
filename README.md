@@ -94,20 +94,6 @@ For example, with the above example input in `puzzle.dat` I get this on my machi
 ```
 [weiss:kenken (master)]$ RUST_LOG=kenken=info time ./target/release/kenken puzzle.dat
  INFO  kenken > loading puzzle.dat
- INFO  kenken::solver > Done @ 7229
-2 5 3 4 7 6 1
-1 4 5 3 6 7 2
-3 1 6 2 4 5 7
-7 2 4 5 1 3 6
-5 7 2 6 3 1 4
-6 3 7 1 2 4 5
-4 6 1 7 5 2 3
-        0.00 real         0.00 user         0.00 sys
-```
-
-```
-[weiss:kenken (master)]$ RUST_LOG=kenken=info time ./target/release/kenken puzzle.dat
- INFO  kenken > loading puzzle.dat
  INFO  kenken::solver > Done @ 1729
 2 5 3 4 7 6 1
 1 4 5 3 6 7 2
