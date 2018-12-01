@@ -14,6 +14,10 @@ fn criterion_benchmark(c: &mut Criterion) {
     let (size_7, cons_7) = kenken::get_input("puzzle.dat");
     c.bench_function("solve 7", move |b| b.iter(|| solve(size_7, &cons_7)));
     c.bench_function("solve 7 full", |b| b.iter(|| kenken::solve("puzzle.dat")));
+    let (sudoku_evil_size, sudoku_evil_cons) = kenken::get_input("sudoku.dat");
+    c.bench_function("sudoku evil", move |b| {
+        b.iter(|| solve(sudoku_evil_size, &sudoku_evil_cons))
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

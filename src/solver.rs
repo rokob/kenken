@@ -14,7 +14,11 @@ pub fn solve(size: usize, constraints: &Constraints) -> Board {
             trace!("\n{}", result);
         }
         match constraints.check(&result) {
-            ConstraintResult::Solved | ConstraintResult::BadConstraint => break,
+            ConstraintResult::Solved => break,
+            ConstraintResult::BadConstraint => {
+                warn!("Bad constraint, quitting");
+                break;
+            }
             ConstraintResult::Violated => backtrack(size, &mut result, &mut pos),
             ConstraintResult::Okay => next(size, &mut result, &mut pos),
         }

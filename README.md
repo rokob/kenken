@@ -157,3 +157,75 @@ Found 8 outliers among 100 measurements (8.00%)
 ```
 
 They should be self-explanatory, the time is a 95% confidence interval about the mean.
+
+
+## Sudoku
+
+Sudoku puzzles are almost a subset of Kenken, the only variation being the latin square constraint,
+i.e. each 3x3 grid must contain each digit in 1-9 once. The row and column constraints are the same,
+and the known values are equality constraints like in Kenken. So I also added one more constraint
+type, `B` for box. It still has the same format as the other ones but the "character" is ignored, and the
+value is the size of the boxes. So the below is an example Sudoku puzzle input:
+
+```
+9
+....A....
+BC....D.E
+FGHI.....
+.J...KL..
+M.......N
+..OP...Q.
+.....RSTU
+V.W....XY
+....Z....
+A = 5
+B = 4
+C = 2
+D = 3
+E = 1
+F = 8
+G = 9
+H = 5
+I = 4
+J = 5
+K = 8
+L = 7
+M = 9
+N = 4
+O = 3
+P = 6
+Q = 9
+R = 1
+S = 4
+T = 6
+U = 3
+V = 3
+W = 8
+X = 1
+Y = 5
+Z = 6
+. B 3
+```
+
+This is a harder puzzle so it takes quite a few steps:
+
+```
+[weiss:kenken (master)]$ RUST_LOG=kenken=info time ./target/release/kenken sudoku.dat
+ INFO  kenken > loading sudoku.dat
+ INFO  kenken::solver > Done @ 11121
+6 3 1 7 5 2 8 4 9
+4 2 7 8 9 6 3 5 1
+8 9 5 4 1 3 6 7 2
+1 5 2 9 4 8 7 3 6
+9 8 6 1 3 7 5 2 4
+7 4 3 6 2 5 1 9 8
+2 7 9 5 8 1 4 6 3
+3 6 8 2 7 4 9 1 5
+5 1 4 3 6 9 2 8 7
+```
+
+But without doing anything fancy, it is still decently fast:
+
+```
+sudoku evil             time:   [2.9185 ms 2.9592 ms 3.0021 ms]
+```

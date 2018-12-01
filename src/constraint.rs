@@ -1,5 +1,6 @@
 use board::Board;
 use puzzle::Puzzle;
+use MAX_SIZE;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Op {
@@ -8,6 +9,7 @@ enum Op {
     Div,
     Sub,
     Equal,
+    Latin,
 }
 
 impl Op {
@@ -19,6 +21,7 @@ impl Op {
             "/" => Div,
             "-" => Sub,
             "=" => Equal,
+            "B" => Latin,
             _ => panic!("Unknown operation"),
         }
     }
@@ -39,11 +42,11 @@ pub enum ConstraintResult {
     BadConstraint,
 }
 
-pub struct Constraints(Vec<Constraint>);
+pub struct Constraints(Vec<Constraint>, usize);
 
 impl Constraints {
     pub fn new(size: usize) -> Self {
-        Constraints(Vec::with_capacity(2 * size * size))
+        Constraints(Vec::with_capacity(2 * size * size), size)
     }
 
     pub fn add(&mut self, line: &str, puzzle: &Puzzle) {
@@ -55,11 +58,17 @@ impl Constraints {
         let coords = puzzle.coords_for_char(letter);
         let operation = Op::from(parts[1]);
         let value = parts[2].parse::<u32>().ok();
-        self.0.push(Constraint {
-            coords,
-            operation,
-            value,
-        });
+        if Op::Latin == operation {
+            self.generate_latin_constraints(
+                value.expect("box constraint must have a value") as usize
+            );
+        } else {
+            self.0.push(Constraint {
+                coords,
+                operation,
+                value,
+            });
+        }
     }
 
     pub fn apply_equality(&self, result: &mut Board) {
@@ -94,6 +103,26 @@ impl Constraints {
             Okay
         } else {
             Solved
+        }
+    }
+
+    fn generate_latin_constraints(&mut self, size: usize) {
+        let count = self.1 / size;
+        for box_row in 0..count {
+            for box_col in 0..count {
+                let origin = (box_row * size, box_col * size);
+                let mut coords = Vec::with_capacity(size * size);
+                for r in 0..size {
+                    for c in 0..size {
+                        coords.push((origin.0 + r, origin.1 + c));
+                    }
+                }
+                self.0.push(Constraint {
+                    coords,
+                    operation: Op::Latin,
+                    value: Some(size as u32),
+                });
+            }
         }
     }
 }
@@ -187,6 +216,25 @@ impl Constraint {
                     }
                 }
                 ConstraintResult::Violated
+            }
+            Op::Latin => {
+                let mut seen = [false; MAX_SIZE];
+                let mut seen_hole = false;
+                for (r, c) in self.coords.iter() {
+                    if ans.is_hole(*r, *c) {
+                        seen_hole = true;
+                        continue;
+                    }
+                    if seen[(ans.value(*r, *c) - 1) as usize] {
+                        return ConstraintResult::Violated;
+                    }
+                    seen[(ans.value(*r, *c) - 1) as usize] = true;
+                }
+                if seen_hole {
+                    ConstraintResult::Okay
+                } else {
+                    ConstraintResult::Solved
+                }
             }
         }
     }
