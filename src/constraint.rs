@@ -1,3 +1,4 @@
+use MAX_SIZE;
 use board::Board;
 use puzzle::Puzzle;
 
@@ -131,13 +132,22 @@ impl Constraint {
         match self.operation {
             Op::Add => {
                 let mut sum = 0;
+                let mut seen_hole = false;
                 for (r, c) in self.coords.iter() {
                     if ans.is_hole(*r, *c) {
-                        return ConstraintResult::Okay;
+                        seen_hole = true;
+                        continue;
                     }
                     sum += ans.value(*r, *c);
                 }
                 if let Some(val) = self.value {
+                    if seen_hole {
+                        if sum < val {
+                            return ConstraintResult::Okay;
+                        } else {
+                            return ConstraintResult::Violated;
+                        }
+                    }
                     if val == sum {
                         return ConstraintResult::Solved;
                     }
@@ -146,13 +156,22 @@ impl Constraint {
             }
             Op::Mul => {
                 let mut prod = 1;
+                let mut seen_hole = false;
                 for (r, c) in self.coords.iter() {
                     if ans.is_hole(*r, *c) {
-                        return ConstraintResult::Okay;
+                        seen_hole = true;
+                        continue;
                     }
                     prod *= ans.value(*r, *c);
                 }
                 if let Some(val) = self.value {
+                    if seen_hole {
+                        if prod <= val && val % prod == 0 {
+                            return ConstraintResult::Okay;
+                        } else {
+                            return ConstraintResult::Violated;
+                        }
+                    }
                     if val == prod {
                         return ConstraintResult::Solved;
                     }
@@ -165,15 +184,11 @@ impl Constraint {
                 }
                 let a = self.coords[0];
                 let b = self.coords[1];
-                if ans.either_hole(a, b) {
-                    return ConstraintResult::Okay;
-                }
                 if let Some(val) = self.value {
-                    if ans.div_equal(a, b, val) {
-                        return ConstraintResult::Solved;
-                    }
+                    ans.could_div_equal(a, b, val)
+                } else {
+                    ConstraintResult::Violated
                 }
-                ConstraintResult::Violated
             }
             Op::Sub => {
                 if self.coords.len() != 2 {
@@ -181,15 +196,11 @@ impl Constraint {
                 }
                 let a = self.coords[0];
                 let b = self.coords[1];
-                if ans.either_hole(a, b) {
-                    return ConstraintResult::Okay;
-                }
                 if let Some(val) = self.value {
-                    if ans.sub_equal(a, b, val) {
-                        return ConstraintResult::Solved;
-                    }
+                    ans.could_sub_equal(a, b, val)
+                } else {
+                    ConstraintResult::Violated
                 }
-                ConstraintResult::Violated
             }
             Op::Equal => {
                 if self.coords.len() != 1 {
@@ -207,7 +218,7 @@ impl Constraint {
                 ConstraintResult::Violated
             }
             Op::Unique => {
-                let mut seen = [false; 7];
+                let mut seen = [false; MAX_SIZE];
                 let mut seen_hole = false;
                 for (r, c) in self.coords.iter() {
                     if ans.is_hole(*r, *c) {

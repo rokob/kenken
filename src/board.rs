@@ -1,5 +1,13 @@
 use std::fmt;
+use constraint::ConstraintResult;
 use MAX_SIZE;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Backtrack {
+    Solved,
+    Reset,
+    Next,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Item {
@@ -9,11 +17,9 @@ pub enum Item {
 }
 
 impl Item {
+    #[inline]
     pub fn is_hole(self) -> bool {
-        match self {
-            Item::Hole => true,
-            _ => false,
-        }
+        self == Item::Hole
     }
 
     pub fn is_solved(self) -> bool {
@@ -23,6 +29,7 @@ impl Item {
         }
     }
 
+    #[inline]
     pub fn value(self) -> u32 {
         match self {
             Item::Guess(x) | Item::Solved(x) => x,
@@ -40,53 +47,139 @@ impl fmt::Display for Item {
     }
 }
 
-pub struct Board(pub [[Item; MAX_SIZE]; MAX_SIZE], pub usize);
+macro_rules! mget {
+    ($m:tt, $x:expr, $y:expr) => {
+        $m[$x + $y * MAX_SIZE]
+    };
+}
+
+pub struct Board {
+    board: [Item; MAX_SIZE * MAX_SIZE],
+    size: usize,
+}
 
 impl Board {
     pub fn new(size: usize) -> Self {
-        Board([[Item::Hole; MAX_SIZE]; MAX_SIZE], size)
+        Board {
+            board: [Item::Hole; MAX_SIZE * MAX_SIZE],
+            size,
+        }
     }
 
     pub fn solve(&mut self, r: usize, c: usize, val: u32) {
-        self.0[r][c] = Item::Solved(val);
+        mget!((self.board), r, c) = Item::Solved(val);
     }
 
     pub fn is_hole(&self, r: usize, c: usize) -> bool {
-        self.0[r][c].is_hole()
+        mget!((self.board), r, c).is_hole()
+    }
+
+    pub fn is_solved(&self, r: usize, c: usize) -> bool {
+        mget!((self.board), r, c).is_solved()
     }
 
     pub fn value(&self, r: usize, c: usize) -> u32 {
-        self.0[r][c].value()
+        mget!((self.board), r, c).value()
     }
 
-    pub fn either_hole(&self, a: (usize, usize), b: (usize, usize)) -> bool {
-        self.0[a.0][a.1].is_hole() || self.0[b.0][b.1].is_hole()
+    pub fn could_div_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> ConstraintResult {
+        let a_item = mget!((self.board), a.0, a.1);
+        let b_item = mget!((self.board), b.0, b.1);
+        let a_hole = a_item.is_hole();
+        let b_hole = b_item.is_hole();
+        if a_hole && b_hole {
+            return ConstraintResult::Okay;
+        }
+        if a_hole {
+            let b_val = b_item.value();
+            if val * b_val <= self.size as u32 || b_val % val == 0 {
+                return ConstraintResult::Okay;
+            } else {
+                return ConstraintResult::Violated;
+            }
+        }
+        if b_hole {
+            let a_val = a_item.value();
+            if val * a_val <= self.size as u32 || a_val % val == 0 {
+                return ConstraintResult::Okay;
+            } else {
+                return ConstraintResult::Violated;
+            }
+        }
+        let a_val = a_item.value();
+        let b_val = b_item.value();
+        if a_val == val * b_val || b_val == val * a_val {
+            ConstraintResult::Solved
+        } else {
+            ConstraintResult::Violated
+        }
     }
 
-    pub fn div_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> bool {
-        let a_val = self.0[a.0][a.1].value();
-        let b_val = self.0[b.0][b.1].value();
-        a_val == val * b_val || b_val == val * a_val
+    pub fn could_sub_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> ConstraintResult {
+        let a_item = mget!((self.board), a.0, a.1);
+        let b_item = mget!((self.board), b.0, b.1);
+        if a_item.is_hole() && b_item.is_hole() {
+            return ConstraintResult::Okay;
+        }
+        if a_item.is_hole() {
+            let b_val = b_item.value();
+            if val + b_val <= self.size as u32 || b_val > val {
+                return ConstraintResult::Okay;
+            } else {
+                return ConstraintResult::Violated;
+            }
+        }
+        if b_item.is_hole() {
+            let a_val = a_item.value();
+            if val + a_val <= self.size as u32 || a_val > val {
+                return ConstraintResult::Okay;
+            } else {
+                return ConstraintResult::Violated;
+            }
+        }
+        let a_val = a_item.value();
+        let b_val = b_item.value();
+        if a_val == val + b_val || b_val == val + a_val {
+            ConstraintResult::Solved
+        } else {
+            ConstraintResult::Violated
+        }
     }
 
-    pub fn sub_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> bool {
-        let a_val = self.0[a.0][a.1].value();
-        let b_val = self.0[b.0][b.1].value();
-        a_val == val + b_val || b_val == val + a_val
+    pub fn backtrack(&mut self, pos: &(usize, usize)) -> Backtrack {
+        debug_assert!(!mget!((self.board), pos.0, pos.1).is_hole());
+        if mget!((self.board), pos.0, pos.1).is_solved() {
+            return Backtrack::Solved;
+        }
+        if let Item::Guess(x) = mget!((self.board), pos.0, pos.1) {
+            if x == self.size as u32 {
+                mget!((self.board), pos.0, pos.1) = Item::Hole;
+                Backtrack::Reset
+            } else {
+                mget!((self.board), pos.0, pos.1) = Item::Guess(x + 1);
+                Backtrack::Next
+            }
+        } else {
+            panic!("Bad backtracking cell @ ({}, {})", pos.0, pos.1);
+        }
+    }
+
+    pub fn initial(&mut self, pos: &(usize, usize)) {
+        mget!((self.board), pos.0, pos.1) = Item::Guess(1);
     }
 }
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for r in 0..self.1 - 1 {
-            for c in 0..self.1 - 1 {
-                write!(f, "{} ", self.0[r][c])?
+        for r in 0..self.size - 1 {
+            for c in 0..self.size - 1 {
+                write!(f, "{} ", mget!((self.board), r, c))?
             }
-            writeln!(f, "{}", self.0[r][self.1 - 1])?
+            writeln!(f, "{}", mget!((self.board), r, self.size - 1))?
         }
-        for c in 0..self.1 - 1 {
-            write!(f, "{} ", self.0[self.1 - 1][c])?
+        for c in 0..self.size - 1 {
+            write!(f, "{} ", mget!((self.board), self.size - 1, c))?
         }
-        write!(f, "{}", self.0[self.1 - 1][self.1 - 1])
+        write!(f, "{}", mget!((self.board), self.size - 1, self.size - 1))
     }
 }

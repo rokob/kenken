@@ -1,4 +1,4 @@
-use board::{Board, Item};
+use board::{Board, Backtrack};
 use constraint::{ConstraintResult, Constraints};
 
 pub fn solve(size: usize, constraints: &Constraints) -> Board {
@@ -30,40 +30,33 @@ pub fn solve(size: usize, constraints: &Constraints) -> Board {
 fn backtrack(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
     trace!("backtracking...");
     loop {
-        match board.0[cur.0][cur.1] {
-            Item::Hole => panic!(
-                "Backtracking from a hole makes no sense @ ({}, {})",
-                cur.0, cur.1
-            ),
-            Item::Solved(_) => {
+        match board.backtrack(cur) {
+            Backtrack::Solved => {
                 prev_position(size, cur);
                 continue;
-            }
-            Item::Guess(x) => {
-                if x as usize == size {
-                    board.0[cur.0][cur.1] = Item::Hole;
-                    prev_position(size, cur);
-                    continue;
-                } else {
-                    board.0[cur.0][cur.1] = Item::Guess(x + 1);
-                    break;
-                }
-            }
+            },
+            Backtrack::Reset => {
+                prev_position(size, cur);
+                continue;
+            },
+            Backtrack::Next => {
+                break;
+            },
         }
     }
 }
 
 fn next(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
-    if board.0[cur.0][cur.1].is_hole() {
-        board.0[cur.0][cur.1] = Item::Guess(1);
+    if board.is_hole(cur.0, cur.1) {
+        board.initial(cur);
         return;
     }
     loop {
         next_position(size, cur);
-        if board.0[cur.0][cur.1].is_hole() {
-            board.0[cur.0][cur.1] = Item::Guess(1);
+        if board.is_hole(cur.0, cur.1) {
+            board.initial(cur);
             break;
-        } else if board.0[cur.0][cur.1].is_solved() {
+        } else if board.is_solved(cur.0, cur.1) {
             continue;
         } else {
             panic!("This shouldn't happen @ ({}, {})", cur.0, cur.1);
