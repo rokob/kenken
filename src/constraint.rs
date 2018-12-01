@@ -1,6 +1,5 @@
 use board::Board;
 use puzzle::Puzzle;
-use MAX_SIZE;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Op {
@@ -9,7 +8,6 @@ enum Op {
     Div,
     Sub,
     Equal,
-    Unique,
 }
 
 impl Op {
@@ -21,7 +19,7 @@ impl Op {
             "/" => Div,
             "-" => Sub,
             "=" => Equal,
-            _ => Unique,
+            _ => panic!("Unknown operation"),
         }
     }
 }
@@ -45,34 +43,7 @@ pub struct Constraints(Vec<Constraint>);
 
 impl Constraints {
     pub fn new(size: usize) -> Self {
-        let mut me = Constraints(Vec::with_capacity(2 * size * size));
-        me.add_basic_constraints(size);
-        me
-    }
-
-    fn add_basic_constraints(&mut self, size: usize) {
-        for r in 0..size {
-            let mut coords = Vec::with_capacity(size);
-            for c in 0..size {
-                coords.push((r, c));
-            }
-            self.0.push(Constraint {
-                coords,
-                operation: Op::Unique,
-                value: None,
-            });
-        }
-        for c in 0..size {
-            let mut coords = Vec::with_capacity(size);
-            for r in 0..size {
-                coords.push((r, c));
-            }
-            self.0.push(Constraint {
-                coords,
-                operation: Op::Unique,
-                value: None,
-            });
-        }
+        Constraints(Vec::with_capacity(2 * size * size))
     }
 
     pub fn add(&mut self, line: &str, puzzle: &Puzzle) {
@@ -216,25 +187,6 @@ impl Constraint {
                     }
                 }
                 ConstraintResult::Violated
-            }
-            Op::Unique => {
-                let mut seen = [false; MAX_SIZE];
-                let mut seen_hole = false;
-                for (r, c) in self.coords.iter() {
-                    if ans.is_hole(*r, *c) {
-                        seen_hole = true;
-                        continue;
-                    }
-                    if seen[(ans.value(*r, *c) - 1) as usize] {
-                        return ConstraintResult::Violated;
-                    }
-                    seen[(ans.value(*r, *c) - 1) as usize] = true;
-                }
-                if seen_hole {
-                    ConstraintResult::Okay
-                } else {
-                    ConstraintResult::Solved
-                }
             }
         }
     }

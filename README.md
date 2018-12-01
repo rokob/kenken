@@ -18,6 +18,11 @@ and letting the constraint violation handle the issue. This small change cuts th
 in half so that the full solve time including parsing the input file is about 600us (see numbers at
 the bottom). Any more optimization at this point would probably not be worthwhile.
 
+But wait, there's more. I forgot that since I am handling the unique row/column constraint inside
+the search generator, I don't actually ever need to check those and therefore don't even need to
+create them. So I deleted a bunch of code and cut the runtime in half again. The average 7x7 time is
+now around 250us. This is down from about 10ms for the most naive approach, i.e. 97.5% faster.
+
 ## Input
 
 Example input:
@@ -120,16 +125,35 @@ out the solving bit from the input processing step to get the speed for just tha
 have a benchmark for the whole process. Spoiler: the input processing takes a negligble amount of
 time.
 
-The most recent runs on my machine for the four benchmarks are:
+The most recent runs on my machine for the four benchmarks after the last set of changes are:
 
 ```
-solve 5                 time:   [14.634 us 14.757 us 14.882 us]
+solve 5                 time:   [6.4186 us 6.4721 us 6.5341 us]
+                        change: [-62.624% -60.445% -58.244%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 15 outliers among 100 measurements (15.00%)
+  10 (10.00%) high mild
+  5 (5.00%) high severe
 
-solve 6                 time:   [24.589 us 24.802 us 25.018 us]
+solve 6                 time:   [10.271 us 10.396 us 10.537 us]
+                        change: [-58.932% -58.211% -57.437%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 10 outliers among 100 measurements (10.00%)
+  9 (9.00%) high mild
+  1 (1.00%) high severe
 
-solve 7                 time:   [576.15 us 582.55 us 589.45 us]
+solve 7                 time:   [246.64 us 248.53 us 250.55 us]
+                        change: [-58.672% -57.940% -57.187%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high severe
 
-solve 7 full            time:   [601.89 us 609.89 us 617.95 us]
+solve 7 full            time:   [274.45 us 277.40 us 280.54 us]
+                        change: [-54.924% -53.916% -52.864%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
 ```
 
 They should be self-explanatory, the time is a 95% confidence interval about the mean.
