@@ -1,5 +1,5 @@
-use std::fmt;
 use constraint::ConstraintResult;
+use std::fmt;
 use MAX_SIZE;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -82,7 +82,12 @@ impl Board {
         mget!((self.board), r, c).value()
     }
 
-    pub fn could_div_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> ConstraintResult {
+    pub fn could_div_equal(
+        &self,
+        a: (usize, usize),
+        b: (usize, usize),
+        val: u32,
+    ) -> ConstraintResult {
         let a_item = mget!((self.board), a.0, a.1);
         let b_item = mget!((self.board), b.0, b.1);
         let a_hole = a_item.is_hole();
@@ -115,7 +120,12 @@ impl Board {
         }
     }
 
-    pub fn could_sub_equal(&self, a: (usize, usize), b: (usize, usize), val: u32) -> ConstraintResult {
+    pub fn could_sub_equal(
+        &self,
+        a: (usize, usize),
+        b: (usize, usize),
+        val: u32,
+    ) -> ConstraintResult {
         let a_item = mget!((self.board), a.0, a.1);
         let b_item = mget!((self.board), b.0, b.1);
         if a_item.is_hole() && b_item.is_hole() {

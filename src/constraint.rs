@@ -1,6 +1,6 @@
-use MAX_SIZE;
 use board::Board;
 use puzzle::Puzzle;
+use MAX_SIZE;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Op {

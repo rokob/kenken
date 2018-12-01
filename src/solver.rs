@@ -1,4 +1,4 @@
-use board::{Board, Backtrack};
+use board::{Backtrack, Board};
 use constraint::{ConstraintResult, Constraints};
 
 pub fn solve(size: usize, constraints: &Constraints) -> Board {
@@ -31,17 +31,13 @@ fn backtrack(size: usize, board: &mut Board, cur: &mut (usize, usize)) {
     trace!("backtracking...");
     loop {
         match board.backtrack(cur) {
-            Backtrack::Solved => {
+            Backtrack::Solved | Backtrack::Reset => {
                 prev_position(size, cur);
                 continue;
-            },
-            Backtrack::Reset => {
-                prev_position(size, cur);
-                continue;
-            },
+            }
             Backtrack::Next => {
                 break;
-            },
+            }
         }
     }
 }
